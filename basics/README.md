@@ -269,3 +269,57 @@ Then use the given URL to access the app:
 ```
 
 And we get a response from the server. The Service is exposed.
+
+### Step 2: Using labels
+
+The Deployment created automatically a label for our Pod. With the describe deployment subcommand you can see the name (the _key_) of that label:
+
+`kubectl describe deployment`
+
+Let’s use this label to query our list of Pods. We’ll use the `kubectl get pods` command with -l as a parameter, followed by the label values:
+
+`kubectl get pods -l app=kubernetes-bootcamp`
+
+You can do the same to list the existing Services:
+
+`kubectl get services -l app=kubernetes-bootcamp`
+
+Get the name of the Pod and store it in the POD_NAME environment variable:
+
+`export POD_NAME="$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')"`
+
+`echo "Name of the Pod: $POD_NAME"`
+
+To apply a new label we use the label subcommand followed by the object type, object name and the new label:
+
+`kubectl label pods "$POD_NAME" version=v1`
+
+This will apply a new label to our Pod (we pinned the application version to the Pod), and we can check it with the describe pod command:
+
+`kubectl describe pods "$POD_NAME"`
+
+We see here that the label is attached now to our Pod. And we can query now the list of pods using the new label:
+
+`kubectl get pods -l version=v1`
+
+And we see the Pod.
+
+### Step 3: Deleting a service
+
+To delete Services you can use the `delete service` subcommand. Labels can be used also here:
+
+`kubectl delete service -l app=kubernetes-bootcamp`
+
+Confirm that the Service is gone:
+
+`kubectl get services`
+
+This confirms that our Service was removed. To confirm that route is not exposed anymore you can curl the previously exposed IP and port:
+
+`curl http://"$(minikube ip):$NODE_PORT"`
+
+This proves that the application is not reachable anymore from outside of the cluster. You can confirm that the app is still running with a curl from inside the pod:
+
+`kubectl exec -ti $POD_NAME -- curl http://localhost:8080`
+
+We see here that the application is up. This is because the Deployment is managing the application. To shut down the application, you would need to delete the Deployment as well.
